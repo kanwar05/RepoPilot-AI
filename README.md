@@ -10,6 +10,10 @@ asks a local Ollama instance for one validated Conventional Commit suggestion.
 Untracked files are not read. Empty staged diffs, unavailable Ollama, oversized diffs,
 and malformed model responses produce explicit errors.
 
+For a detailed explanation of the folders, runtime flow, modules, functions,
+testing, and extension guidelines, see the
+[developer guide](docs/README.md).
+
 ## Setup
 
 Requirements: Node.js 20+, Git, and [Ollama](https://ollama.com/) with
@@ -35,12 +39,27 @@ The command prints a suggestion only; accepting or applying it remains a manual
 step. `--ollama-url` is available for a locally hosted Ollama endpoint, and defaults
 to `http://127.0.0.1:11434`.
 
+Generate a Markdown changelog preview from recent commits:
+
+```powershell
+node .\dist\cli.js generate-changelog
+node .\dist\cli.js generate-changelog --since v1.0.0 --max-commits 50
+node .\dist\cli.js generate-changelog --json
+```
+
+The changelog command reads commit subjects and bodies with safe Git argument arrays,
+limits history to 100 commits by default (maximum 500), and asks Ollama to cite the
+source commit hashes for every note. It prints a preview only: it never edits
+`CHANGELOG.md`, commits, or pushes. Invalid Git references, empty history, unavailable
+Ollama, malformed model JSON, and entries citing unknown commits are reported as
+errors. Large histories are bounded by `--max-commits`; model context size may still
+limit the useful detail in a very large request.
+
 ## Planned slices
 
-1. Changelog drafts from Git history.
-2. Optional README update suggestions, with explicit confirmation before any file
+1. Optional README update suggestions, with explicit confirmation before any file
    modification.
-3. Additional CLI and integration coverage.
+2. Additional CLI and integration coverage.
 
 ## Design notes
 
