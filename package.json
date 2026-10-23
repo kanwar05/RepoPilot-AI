@@ -1,0 +1,23 @@
+{
+  "name": "repopilot-ai",
+  "version": "0.1.0",
+  "description": "Offline-first Git chore automation powered by local Ollama models.",
+  "type": "module",
+  "bin": {
+    "repopilot": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test dist/tests/**/*.test.js"
+  },
+  "dependencies": {
+    "commander": "^14.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.8.0",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
