@@ -55,11 +55,27 @@ Ollama, malformed model JSON, and entries citing unknown commits are reported as
 errors. Large histories are bounded by `--max-commits`; model context size may still
 limit the useful detail in a very large request.
 
-## Planned slices
+Suggest targeted README updates from the staged diff:
 
-1. Optional README update suggestions, with explicit confirmation before any file
-   modification.
-2. Additional CLI and integration coverage.
+```powershell
+node .\dist\cli.js suggest-readme
+node .\dist\cli.js suggest-readme --json
+node .\dist\cli.js suggest-readme --max-diff-chars 12000
+```
+
+The README assistant reads `README.md` and staged changes, filters obvious
+credential and environment-file paths, and prints a preview with section names,
+changes, and evidence quotes. It never edits, deletes, commits, or pushes files.
+Suggestions are rejected when the model returns invalid JSON, an unknown section,
+or evidence that cannot be traced to the supplied content. Evidence is
+source-tagged (`readme` or `diff`), and non-empty suggestions must cite an exact
+added line from the staged diff; the quote may omit only Git's leading `+`
+marker. Missing README files, empty or unsafe diffs,
+truncated evidence, and unreachable Ollama are reported as errors. If the model
+produces an unverifiable suggestion, RepoPilot makes one conservative retry that
+requests an empty result rather than accepting the claim. A truncated diff can
+reduce the quality of suggestions; review the preview manually before changing
+documentation.
 
 ## Design notes
 
