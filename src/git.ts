@@ -10,12 +10,13 @@ export interface GitCommit {
   body: string;
 }
 
-export async function getCachedDiff(): Promise<string> {
+export async function getCachedDiff(cwd = process.cwd()): Promise<string> {
   try {
     const result = await execFileAsync(
       "git",
       ["diff", "--cached", "--no-ext-diff"],
       {
+        cwd,
         maxBuffer: 20 * 1024 * 1024,
         windowsHide: true,
       },

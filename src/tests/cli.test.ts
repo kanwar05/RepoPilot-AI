@@ -15,3 +15,23 @@ test("CLI exposes the changelog command without contacting Ollama", async () => 
   assert.match(result.stdout, /--since <ref>/);
   assert.match(result.stdout, /--json/);
 });
+
+test("CLI help exposes all three commands", async () => {
+  const result = await execFileAsync(process.execPath, ["dist/cli.js", "--help"], {
+    windowsHide: true,
+  });
+  assert.match(result.stdout, /suggest-commit/);
+  assert.match(result.stdout, /generate-changelog/);
+  assert.match(result.stdout, /suggest-readme/);
+});
+
+test("CLI exposes README options without contacting Ollama", async () => {
+  const result = await execFileAsync(
+    process.execPath,
+    ["dist/cli.js", "suggest-readme", "--help"],
+    { windowsHide: true },
+  );
+  assert.match(result.stdout, /Suggest targeted README updates/);
+  assert.match(result.stdout, /--max-diff-chars <number>/);
+  assert.match(result.stdout, /--json/);
+});

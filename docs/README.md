@@ -1,7 +1,7 @@
 # RepoPilot AI Developer Guide
 
-This guide explains how RepoPilot AI is organized and how the current commit
-suggestion workflow works. It is written for contributors who want to understand
+This guide explains how RepoPilot AI is organized and how its local AI workflows
+work. It is written for contributors who want to understand
 the code before changing it.
 
 ## 1. What RepoPilot AI does
@@ -10,13 +10,15 @@ RepoPilot AI is an offline-first command-line tool for Git chores. The current
 feature reads the staged Git diff and asks a local Ollama model to suggest one
 Conventional Commit message.
 
-The current command is:
+The current commands are:
 
 ```powershell
 node .\dist\cli.js suggest-commit
+node .\dist\cli.js generate-changelog
+node .\dist\cli.js suggest-readme
 ```
 
-The command only suggests text. It does not create a commit, push to a remote,
+These commands only suggest text. They do not create a commit, push to a remote,
 modify a file, or read untracked files.
 
 ## 2. Project structure
@@ -31,8 +33,12 @@ RepoPilot AI/
 │  ├─ errors.ts
 │  ├─ git.ts
 │  ├─ ollama.ts
+│  ├─ readme-assistant.ts
 │  └─ tests/
-│     └─ commit-generator.test.ts
+│     ├─ commit-generator.test.ts
+│     ├─ changelog-generator.test.ts
+│     ├─ git.test.ts
+│     └─ readme-assistant.test.ts
 ├─ .gitignore
 ├─ package.json
 ├─ package-lock.json
@@ -81,6 +87,17 @@ src/cli.ts prints JSON or a formatted commit message
 
 No step writes to the repository. The only external operations are the read-only
 Git command and an HTTP request to the configured Ollama endpoint.
+
+The README suggestion path reads `README.md`, obtains the staged diff through the
+same argument-array Git boundary, removes obvious secret and environment-file
+content, bounds the diff, and asks Ollama for section-specific JSON suggestions.
+The parser accepts only known headings or an explicit `New section:` label. Each
+evidence item has the exact shape `{"source":"readme"|"diff","quote":"..."}`.
+Every suggestion must cite at least one exact added line from the bounded diff;
+README evidence may provide additional context. Line endings and trailing
+whitespace are normalized only for verification, and a diff quote may omit the
+leading `+` marker while preserving the added content. Truncated input is marked
+in the prompt and cannot be used as evidence.
 
 ## 4. Source file reference
 
@@ -162,7 +179,7 @@ This interface defines the dependency used by the commit generator:
 
 ```ts
 interface OllamaClient {
-  generate(prompt: string, model: string): Promise<string>;
+  generate(prompt: string, model: string, format?: unknown): Promise<string>;
 }
 ```
 
@@ -263,6 +280,22 @@ Coordinates the feature:
 The default maximum is 12,000 characters. Truncation is done before the model
 request so the size limit is predictable and local.
 
+### `src/readme-assistant.ts`
+
+`readRepositoryReadme` reads only the repository's root `README.md`. The staged
+diff is filtered for obvious sensitive paths and secret assignments before it is
+sent to Ollama. `generateReadmeSuggestions` rejects empty input, bounds large
+diffs, and marks truncation explicitly.
+
+`parseReadmeSuggestions` enforces the exact suggestion fields, known README
+headings, non-empty source-tagged evidence, and evidence traceability. Its
+schema is also passed to Ollama's `format` request field. If an initial model
+candidate fails source verification, one corrective request asks for an empty
+result unless exact added-line evidence is available; a second invalid response
+remains an explicit error. The formatter produces a human-readable preview; the
+CLI's `--json` option prints the same validated object for scripts. No function
+in this module writes to the README.
+
 ### `src/errors.ts`
 
 #### `RepoPilotError`
@@ -300,6 +333,9 @@ Expected failures are surfaced rather than hidden:
 | Empty Ollama response | `LocalOllamaClient` | Response is rejected |
 | Malformed JSON | `parseCommitSuggestion` | Model output is rejected |
 | Invalid CLI limit | `cli.ts` | Command exits with an error |
+| Missing README | `readme-assistant.ts` | README suggestions are not requested |
+| Unknown README section | `parseReadmeSuggestions` | Model output is rejected |
+| Untraceable README evidence | `parseReadmeSuggestions` | Model output is rejected |
 
 ## 6. Development workflow
 
@@ -343,7 +379,8 @@ When adding a future Git chore:
 
 For changelog generation, the Git input should remain a read-only history command.
 For README suggestions, produce a preview first and require explicit confirmation
-before any future write operation.
+before any future write operation. Never add an automatic write, commit, or push
+path to this command.
 
 ## 8. Privacy and safety rules
 

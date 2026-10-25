@@ -5,20 +5,24 @@ export interface OllamaGenerateResponse {
 }
 
 export interface OllamaClient {
-  generate(prompt: string, model: string): Promise<string>;
+  generate(prompt: string, model: string, format?: unknown): Promise<string>;
 }
 
 export class LocalOllamaClient implements OllamaClient {
   public constructor(private readonly baseUrl = "http://127.0.0.1:11434") {}
 
-  public async generate(prompt: string, model: string): Promise<string> {
+  public async generate(
+    prompt: string,
+    model: string,
+    format?: unknown,
+  ): Promise<string> {
     try {
       const response = await fetch(
         `${this.baseUrl.replace(/\/$/, "")}/api/generate`,
         {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ model, prompt, stream: false }),
+          body: JSON.stringify({ model, prompt, stream: false, ...(format ? { format } : {}) }),
         },
       );
       if (!response.ok) {
