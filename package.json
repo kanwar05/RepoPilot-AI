@@ -6,9 +6,17 @@
   "bin": {
     "repopilot": "dist/cli.js"
   },
+  "files": [
+    "dist/*.js",
+    "README.md",
+    "LICENSE",
+    "scripts/demo.mjs"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "npm run build && node --test dist/tests/**/*.test.js"
+    "test": "npm run build && node --test dist/tests/**/*.test.js",
+    "demo": "npm run build && node scripts/demo.mjs",
+    "prepack": "npm run build"
   },
   "dependencies": {
     "commander": "^14.0.1"

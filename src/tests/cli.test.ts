@@ -35,3 +35,15 @@ test("CLI exposes README options without contacting Ollama", async () => {
   assert.match(result.stdout, /--max-diff-chars <number>/);
   assert.match(result.stdout, /--json/);
 });
+
+test("CLI rejects an invalid numeric option without contacting Ollama", async () => {
+  await assert.rejects(
+    execFileAsync(
+      process.execPath,
+      ["dist/cli.js", "suggest-commit", "--max-diff-chars", "0"],
+      { windowsHide: true },
+    ),
+    (error: unknown) =>
+      error instanceof Error && /positive integer/.test(error.message),
+  );
+});
